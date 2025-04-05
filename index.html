@@ -1,12 +1,18 @@
 <html lang="ja">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title> Masao Oi (大井 雅雄) </title>
 <style type="text/css">
-    <!--
-    body {line-height: 150%;}
-    li {padding-top:5px; padding-bottom:5px;}
-    -->
+    body {
+        line-height: 150%;
+        padding-left: 1em;
+        padding-right: 1em;
+    }
+    li {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
 </style>
 
 </head>
@@ -160,7 +166,15 @@ e-mail: masaooi at ntu.edu.tw
     
 <hr>
 
-Last updated on 2025-03-29.
+<footer>
+    <p id="last-updated"></p>
+  </footer>
+  
+ <script>
+  const lastUpdated = new Date(document.lastModified);
+  const isoDate = lastUpdated.toISOString().slice(0, 10); // "YYYY-MM-DD" だけ取り出す
+  document.getElementById("last-updated").textContent = "Last Updated: " + isoDate;
+</script>
 </body>
 </html>
 

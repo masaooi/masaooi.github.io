@@ -1,7 +1,19 @@
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>2024Fall</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Masao Oi -- 2024 Fall </title>
+    <style type="text/css">
+        body {
+            line-height: 150%;
+            padding-left: 1em;
+            padding-right: 1em;
+            }
+        li {
+            padding-top: 5px;
+            padding-bottom: 5px;
+            }
+    </style>
 </head>
 <body>
 <h3>Representation theory of finite groups of Lie type</h3>
@@ -88,9 +100,16 @@ Please feel free to contact me!<br>
 Office: Astro-Math Building 507<br>
 Mail: masaooi at ntu.edu.tw<br>
 <hr>
-Last updated: 2025-01-15.
 
-
+<footer>
+    <p id="last-updated"></p>
+  </footer>
+  
+ <script>
+  const lastUpdated = new Date(document.lastModified);
+  const isoDate = lastUpdated.toISOString().slice(0, 10); // "YYYY-MM-DD" だけ取り出す
+  document.getElementById("last-updated").textContent = "Last Updated: " + isoDate;
+</script>
 </body>
 </html>
 
