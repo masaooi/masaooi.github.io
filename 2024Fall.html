@@ -140,10 +140,10 @@ Mail: masaooi at ntu.edu.tw<br>
     <p id="last-updated"></p>
   </footer>
   
- <script>
-  const lastUpdated = new Date(document.lastModified);
-  const isoDate = lastUpdated.toISOString().slice(0, 10); // "YYYY-MM-DD" だけ取り出す
-  document.getElementById("last-updated").textContent = "Last Updated: " + isoDate;
+<script>
+    const lastUpdated = new Date(document.lastModified);
+    const isoDate = lastUpdated.toISOString().slice(0, 10); // "YYYY-MM-DD"
+    document.getElementById("last-updated").textContent = "Last Updated: " + isoDate;
 </script>
 </body>
 </html>
