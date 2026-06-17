@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カレンダー</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;background:#f7f6f3;color:#1a1a1a;min-height:100vh}
+#app{max-width:780px;margin:0 auto;padding:1.5rem 1rem 3rem}
+
+/* top bar */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.nav-btn{background:#fff;border:1px solid #ddd;border-radius:8px;padding:6px 16px;cursor:pointer;font-size:14px;color:#333;transition:background .1s}
+.nav-btn:hover{background:#f0efec}
+.month-title{font-size:20px;font-weight:600;letter-spacing:.02em;color:#1a1a1a}
+
+/* calendar grid */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.day-header{text-align:center;font-size:11px;font-weight:600;color:#888;padding:5px 0;letter-spacing:.05em}
+.day-header.sun{color:#c0392b}
+.day-header.sat{color:#2980b9}
+
+.day-cell{min-height:76px;border:1px solid #e8e7e3;border-radius:8px;padding:5px 5px 4px;cursor:pointer;position:relative;background:#fff;transition:box-shadow .1s,border-color .1s}
+.day-cell:hover{border-color:#bbb;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.day-cell.empty{background:transparent;border-color:transparent;cursor:default;box-shadow:none}
+.day-cell.today .day-num{background:#2980b9;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.day-cell.sunday .day-num-wrap{color:#c0392b}
+.day-cell.saturday .day-num-wrap{color:#2980b9}
+.day-cell.holiday .day-num-wrap{color:#c0392b}
+
+.hl-strip{position:absolute;inset:0;border-radius:7px;opacity:.2;pointer-events:none}
+
+.day-num-wrap{display:flex;align-items:flex-start;justify-content:space-between;gap:2px;margin-bottom:3px;position:relative;z-index:1}
+.day-num{font-size:13px;font-weight:600;line-height:22px;min-width:22px;text-align:center;flex-shrink:0}
+.holiday-name{font-size:8px;color:#c0392b;line-height:1.2;text-align:right;flex:1;overflow:hidden;max-height:22px}
+
+.dots-row{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:3px;position:relative;z-index:1}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.event-list{font-size:9px;color:#555;line-height:1.4;overflow:hidden;max-height:30px;position:relative;z-index:1}
+.event-item{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* summary */
+.summary-section{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e0deda}
+.summary-title{font-size:12px;font-weight:600;color:#888;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.summary-card{background:#fff;border:1px solid #e8e7e3;border-radius:8px;padding:10px 14px}
+.summary-label{font-size:11px;color:#888;margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.summary-nums{font-size:13px;font-weight:600;color:#1a1a1a}
+.swatch{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.summary-empty{font-size:12px;color:#aaa}
+
+/* status */
+.status-bar{display:flex;align-items:center;gap:8px;margin-top:1rem;padding:.5rem .75rem;background:#fff;border:1px solid #e8e7e3;border-radius:8px;font-size:12px;color:#666}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
+.status-dot.synced{background:#27ae60}
+.status-dot.syncing{background:#f39c12;animation:pulse 1s infinite}
+.status-dot.error{background:#e74c3c}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal{background:#fff;border-radius:14px;padding:1.25rem;width:100%;max-width:320px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.modal-title{font-size:15px;font-weight:600;color:#1a1a1a}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:#aaa;line-height:1;padding:0 2px}
+.modal-close:hover{color:#555}
+
+.section-label{font-size:11px;font-weight:600;color:#888;letter-spacing:.06em;margin:12px 0 6px}
+.color-row{display:flex;gap:6px;flex-wrap:wrap}
+.color-btn{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .1s,border-color .1s;flex-shrink:0;position:relative}
+.color-btn:hover{transform:scale(1.12)}
+.color-btn.selected{border-color:#1a1a1a}
+.color-btn.none-btn{background:#f0efec;border:1px dashed #ccc}
+.color-btn.none-btn::after{content:'×';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;color:#aaa;line-height:1}
+
+.event-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:4px}
+.event-tag{display:inline-flex;align-items:center;gap:3px;background:#f0efec;border-radius:6px;padding:3px 8px;font-size:11px;color:#333}
+.event-del{background:none;border:none;cursor:pointer;color:#aaa;font-size:13px;padding:0;line-height:1}
+.event-del:hover{color:#c0392b}
+
+.event-input-row{display:flex;gap:6px}
+.event-input{flex:1;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:#1a1a1a;font-family:inherit}
+.event-input:focus{outline:none;border-color:#2980b9}
+.add-btn{border:1px solid #ddd;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:#333;font-size:13px;white-space:nowrap}
+.add-btn:hover{background:#f0efec}
+
+.save-btn{width:100%;margin-top:1rem;padding:10px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:500;transition:opacity .1s}
+.save-btn:hover{opacity:.85}
+.save-btn:disabled{opacity:.5;cursor:default}
+
+/* toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top-bar">
+    <button class="nav-btn" id="prev-btn">&#8249;</button>
+    <span class="month-title" id="month-title"></span>
+    <button class="nav-btn" id="next-btn">&#8250;</button>
+  </div>
+  <div class="cal-grid" id="cal-grid">
+    <div class="day-header sun">日</div>
+    <div class="day-header">月</div>
+    <div class="day-header">火</div>
+    <div class="day-header">水</div>
+    <div class="day-header">木</div>
+    <div class="day-header">金</div>
+    <div class="day-header sat">土</div>
+  </div>
+  <div class="summary-section">
+    <div class="summary-title">蛍光マーク集計</div>
+    <div class="summary-grid" id="summary-grid"></div>
+  </div>
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-msg">読み込み中...</span>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="modal-close" id="modal-close">×</button>
+    </div>
+    <div class="section-label">● 丸マーカー（複数選択可）</div>
+    <div class="color-row" id="dot-row"></div>
+    <div class="section-label">▬ 蛍光マーカー（1色）</div>
+    <div class="color-row" id="hl-row"></div>
+    <div class="section-label">予定</div>
+    <div class="event-tags" id="event-tags"></div>
+    <div class="event-input-row">
+      <input class="event-input" id="event-input" placeholder="予定を入力">
+      <button class="add-btn" id="add-event-btn">追加</button>
+    </div>
+    <button class="save-btn" id="save-btn">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GIST_ID = 'b130be11ce4c06849c0a370ff2e31da9';
+const PAT = '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';
+const FILENAME = 'calendar-data.json';
+
+const DOT_COLORS = [
+  {id:'red',    hex:'#e74c3c', label:'赤'},
+  {id:'blue',   hex:'#2980b9', label:'青'},
+  {id:'green',  hex:'#27ae60', label:'緑'},
+  {id:'orange', hex:'#e67e22', label:'橙'},
+  {id:'purple', hex:'#8e44ad', label:'紫'},
+  {id:'pink',   hex:'#e91e8c', label:'ピンク'},
+];
+const HL_COLORS = [
+  {id:'red',    hex:'#e74c3c', label:'赤'},
+  {id:'blue',   hex:'#2980b9', label:'青'},
+  {id:'green',  hex:'#27ae60', label:'緑'},
+  {id:'orange', hex:'#e67e22', label:'橙'},
+  {id:'purple', hex:'#8e44ad', label:'紫'},
+  {id:'pink',   hex:'#e91e8c', label:'ピンク'},
+];
+
+const HOLIDAYS = {
+  '2024-01-01':'元日','2024-01-08':'成人の日','2024-02-11':'建国記念日',
+  '2024-02-12':'振替休日','2024-02-23':'天皇誕生日','2024-03-20':'春分の日',
+  '2024-04-29':'昭和の日','2024-05-03':'憲法記念日','2024-05-04':'みどりの日',
+  '2024-05-05':'こどもの日','2024-05-06':'振替休日','2024-07-15':'海の日',
+  '2024-08-11':'山の日','2024-08-12':'振替休日','2024-09-16':'敬老の日',
+  '2024-09-22':'秋分の日','2024-09-23':'振替休日','2024-10-14':'スポーツの日',
+  '2024-11-03':'文化の日','2024-11-04':'振替休日','2024-11-23':'勤労感謝の日',
+  '2025-01-01':'元日','2025-01-13':'成人の日','2025-02-11':'建国記念日',
+  '2025-02-23':'天皇誕生日','2025-02-24':'振替休日','2025-03-20':'春分の日',
+  '2025-04-29':'昭和の日','2025-05-03':'憲法記念日','2025-05-04':'みどりの日',
+  '2025-05-05':'こどもの日','2025-05-06':'振替休日','2025-07-21':'海の日',
+  '2025-08-11':'山の日','2025-09-15':'敬老の日','2025-09-23':'秋分の日',
+  '2025-10-13':'スポーツの日','2025-11-03':'文化の日','2025-11-23':'勤労感謝の日',
+  '2025-11-24':'振替休日',
+  '2026-01-01':'元日','2026-01-12':'成人の日','2026-02-11':'建国記念日',
+  '2026-02-23':'天皇誕生日','2026-03-20':'春分の日',
+  '2026-04-29':'昭和の日','2026-05-03':'憲法記念日','2026-05-04':'みどりの日',
+  '2026-05-05':'こどもの日','2026-07-20':'海の日',
+  '2026-08-11':'山の日','2026-09-21':'敬老の日','2026-09-23':'秋分の日',
+  '2026-10-12':'スポーツの日','2026-11-03':'文化の日','2026-11-23':'勤労感謝の日',
+  '2027-01-01':'元日','2027-01-11':'成人の日','2027-02-11':'建国記念日',
+  '2027-02-23':'天皇誕生日','2027-03-21':'春分の日',
+  '2027-04-29':'昭和の日','2027-05-03':'憲法記念日','2027-05-04':'みどりの日',
+  '2027-05-05':'こどもの日','2027-07-19':'海の日',
+  '2027-08-11':'山の日','2027-09-20':'敬老の日','2027-09-23':'秋分の日',
+  '2027-10-11':'スポーツの日','2027-11-03':'文化の日','2027-11-23':'勤労感謝の日',
+};
+
+let calData = {};
+let cur = new Date();
+let editKey = null;
+let tmpDots = [], tmpHl = null, tmpEvents = [];
+
+function dk(y,m,d){return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function getDay(k){return calData[k]||{dots:[],hl:null,events:[]}}
+
+function setStatus(state, msg){
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-msg');
+  dot.className = 'status-dot' + (state?' '+state:'');
+  txt.textContent = msg;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+async function loadData(){
+  setStatus('syncing','読み込み中...');
+  try{
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`,{
+      headers:{'Authorization':`token ${PAT}`,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const raw = j.files[FILENAME]?.content || '{}';
+    calData = JSON.parse(raw);
+    setStatus('synced','同期済み — '+(new Date().toLocaleTimeString('ja-JP')));
+    renderAll();
+  }catch(e){
+    setStatus('error','読み込みに失敗しました: '+e.message);
+  }
+}
+
+async function saveData(){
+  setStatus('syncing','保存中...');
+  try{
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`,{
+      method:'PATCH',
+      headers:{'Authorization':`token ${PAT}`,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body:JSON.stringify({files:{[FILENAME]:{content:JSON.stringify(calData,null,2)}}})
+    });
+    if(!r.ok) throw new Error(r.status);
+    setStatus('synced','保存しました — '+(new Date().toLocaleTimeString('ja-JP')));
+    showToast('✓ 保存しました');
+  }catch(e){
+    setStatus('error','保存に失敗しました: '+e.message);
+  }
+}
+
+function renderAll(){renderCalendar();renderSummary();}
+
+function renderCalendar(){
+  const y=cur.getFullYear(), m=cur.getMonth();
+  document.getElementById('month-title').textContent=`${y}年${m+1}月`;
+  const grid=document.getElementById('cal-grid');
+  const headers=Array.from(grid.querySelectorAll('.day-header'));
+  grid.innerHTML='';
+  headers.forEach(h=>grid.appendChild(h));
+  const firstDay=new Date(y,m,1).getDay();
+  const days=new Date(y,m+1,0).getDate();
+  const today=new Date();
+  for(let i=0;i<firstDay;i++){
+    const e=document.createElement('div');e.className='day-cell empty';grid.appendChild(e);
+  }
+  for(let d=1;d<=days;d++){
+    const k=dk(y,m,d);
+    const dow=new Date(y,m,d).getDay();
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const isHol=!!HOLIDAYS[k];
+    const dd=getDay(k);
+    const cell=document.createElement('div');
+    let cls='day-cell';
+    if(isToday) cls+=' today';
+    if(isHol) cls+=' holiday';
+    else if(dow===0) cls+=' sunday';
+    else if(dow===6) cls+=' saturday';
+    cell.className=cls;
+
+    if(dd.hl){
+      const col=HL_COLORS.find(c=>c.id===dd.hl);
+      if(col){const s=document.createElement('div');s.className='hl-strip';s.style.background=col.hex;cell.appendChild(s);}
+    }
+
+    const nw=document.createElement('div');nw.className='day-num-wrap';
+    const num=document.createElement('div');num.className='day-num';num.textContent=d;
+    nw.appendChild(num);
+    if(isHol){const hn=document.createElement('div');hn.className='holiday-name';hn.textContent=HOLIDAYS[k];nw.appendChild(hn);}
+    cell.appendChild(nw);
+
+    if(dd.dots&&dd.dots.length){
+      const dr=document.createElement('div');dr.className='dots-row';
+      dd.dots.forEach(dc=>{const col=DOT_COLORS.find(c=>c.id===dc);if(col){const dot=document.createElement('div');dot.className='dot';dot.style.background=col.hex;dr.appendChild(dot);}});
+      cell.appendChild(dr);
+    }
+    if(dd.events&&dd.events.length){
+      const el=document.createElement('div');el.className='event-list';
+      dd.events.slice(0,3).forEach(ev=>{const ei=document.createElement('div');ei.className='event-item';ei.textContent=ev;el.appendChild(ei);});
+      cell.appendChild(el);
+    }
+    cell.addEventListener('click',()=>openModal(k));
+    grid.appendChild(cell);
+  }
+}
+
+function renderSummary(){
+  const sg=document.getElementById('summary-grid');sg.innerHTML='';
+  const y=cur.getFullYear(), m=cur.getMonth();
+  const thisYear=new Date().getFullYear();
+  let any=false;
+  HL_COLORS.forEach(col=>{
+    let mc=0,yc=0;
+    Object.entries(calData).forEach(([k,v])=>{
+      if(!v.hl||v.hl!==col.id)return;
+      const [ky,km]=k.split('-').map(Number);
+      if(ky===thisYear)yc++;
+      if(ky===y&&km-1===m)mc++;
+    });
+    if(mc===0&&yc===0)return;
+    any=true;
+    const card=document.createElement('div');card.className='summary-card';
+    card.innerHTML=`<div class="summary-label"><span class="swatch" style="background:${col.hex}"></span>${col.label}</div><div class="summary-nums">今月 ${mc}日　今年 ${yc}日</div>`;
+    sg.appendChild(card);
+  });
+  if(!any)sg.innerHTML='<div class="summary-empty">蛍光マークをつけた日が集計されます</div>';
+}
+
+function openModal(key){
+  editKey=key;
+  const [y,m,d]=key.split('-').map(Number);
+  const dow=new Date(y,m-1,d).getDay();
+  const dow_l=['日','月','火','水','木','金','土'];
+  const hn=HOLIDAYS[key]?` (${HOLIDAYS[key]})`:'';
+  document.getElementById('modal-title').textContent=`${y}年${m}月${d}日（${dow_l[dow]}）${hn}`;
+  const dd=getDay(key);
+  tmpDots=[...(dd.dots||[])];
+  tmpHl=dd.hl||null;
+  tmpEvents=[...(dd.events||[])];
+  document.getElementById('event-input').value='';
+  renderDotRow();renderHlRow();renderEventTags();
+  document.getElementById('modal-overlay').style.display='flex';
+  document.getElementById('event-input').focus();
+}
+
+function renderDotRow(){
+  const row=document.getElementById('dot-row');row.innerHTML='';
+  const none=document.createElement('button');none.className='color-btn none-btn'+(tmpDots.length===0?' selected':'');none.title='なし';
+  none.onclick=()=>{tmpDots=[];renderDotRow();};row.appendChild(none);
+  DOT_COLORS.forEach(col=>{
+    const btn=document.createElement('button');btn.className='color-btn'+(tmpDots.includes(col.id)?' selected':'');
+    btn.style.background=col.hex;btn.title=col.label;
+    btn.onclick=()=>{const i=tmpDots.indexOf(col.id);if(i>=0)tmpDots.splice(i,1);else tmpDots.push(col.id);renderDotRow();};
+    row.appendChild(btn);
+  });
+}
+function renderHlRow(){
+  const row=document.getElementById('hl-row');row.innerHTML='';
+  const none=document.createElement('button');none.className='color-btn none-btn'+(!tmpHl?' selected':'');none.title='なし';
+  none.onclick=()=>{tmpHl=null;renderHlRow();};row.appendChild(none);
+  HL_COLORS.forEach(col=>{
+    const btn=document.createElement('button');btn.className='color-btn'+(tmpHl===col.id?' selected':'');
+    btn.style.background=col.hex;btn.title=col.label;
+    btn.onclick=()=>{tmpHl=col.id;renderHlRow();};
+    row.appendChild(btn);
+  });
+}
+function renderEventTags(){
+  const el=document.getElementById('event-tags');el.innerHTML='';
+  tmpEvents.forEach((ev,i)=>{
+    const tag=document.createElement('span');tag.className='event-tag';
+    tag.innerHTML=`${ev}<button class="event-del" data-i="${i}">×</button>`;
+    el.appendChild(tag);
+  });
+  el.querySelectorAll('.event-del').forEach(btn=>btn.addEventListener('click',()=>{tmpEvents.splice(+btn.dataset.i,1);renderEventTags();}));
+}
+
+document.getElementById('add-event-btn').onclick=()=>{
+  const inp=document.getElementById('event-input');const v=inp.value.trim();
+  if(v){tmpEvents.push(v);inp.value='';renderEventTags();}
+};
+document.getElementById('event-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('add-event-btn').click();});
+
+document.getElementById('save-btn').onclick=async()=>{
+  if(!editKey)return;
+  const btn=document.getElementById('save-btn');btn.disabled=true;
+  if(tmpDots.length===0&&!tmpHl&&tmpEvents.length===0){delete calData[editKey];}
+  else{calData[editKey]={dots:tmpDots,hl:tmpHl,events:tmpEvents};}
+  document.getElementById('modal-overlay').style.display='none';
+  renderAll();
+  await saveData();
+  btn.disabled=false;
+};
+
+document.getElementById('modal-close').onclick=()=>document.getElementById('modal-overlay').style.display='none';
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))document.getElementById('modal-overlay').style.display='none';});
+document.getElementById('prev-btn').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);renderAll();};
+document.getElementById('next-btn').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);renderAll();};
+
+loadData();
+</script>
+</body>
+</html>
