@@ -89,6 +89,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .save-btn:hover{opacity:.85}
 .save-btn:disabled{opacity:.5;cursor:default}
 
+.memo-section{margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e0deda}
+.memo-title{font-size:12px;font-weight:600;color:#888;letter-spacing:.08em;margin-bottom:.75rem}
+.memo-list{list-style:none;margin-bottom:.75rem}
+.memo-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #f0efec;font-size:13px;color:#1a1a1a;line-height:1.5}
+.memo-item:last-child{border-bottom:none}
+.memo-bullet{color:#aaa;flex-shrink:0;margin-top:2px}
+.memo-text{flex:1}
+.memo-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:0;line-height:1;flex-shrink:0;margin-top:2px}
+.memo-del:hover{color:#c0392b}
+.memo-empty{font-size:12px;color:#aaa;margin-bottom:.75rem}
+.memo-input-row{display:flex;gap:6px}
+.memo-input{flex:1;border:1px solid #ddd;border-radius:8px;padding:7px 10px;font-size:13px;background:#fff;color:#1a1a1a;font-family:inherit}
+.memo-input:focus{outline:none;border-color:#2980b9}
+.memo-add-btn{border:1px solid #ddd;border-radius:8px;padding:7px 12px;cursor:pointer;background:#fff;color:#333;font-size:13px;white-space:nowrap}
+.memo-add-btn:hover{background:#f0efec}
+
 .toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:300;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 </style>
@@ -123,6 +139,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   <div class="summary-section">
     <div class="summary-title">蛍光マーク集計</div>
     <div class="summary-grid" id="summary-grid"></div>
+  </div>
+  <div class="memo-section">
+    <div class="memo-title">備考</div>
+    <ul class="memo-list" id="memo-list"></ul>
+    <div class="memo-input-row">
+      <input class="memo-input" id="memo-input" placeholder="備考を追加">
+      <button class="memo-add-btn" id="memo-add-btn">追加</button>
+    </div>
   </div>
   <div class="status-bar">
     <div class="status-dot" id="status-dot"></div>
@@ -173,6 +197,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getDatabase(firebaseApp);
 const dataRef = ref(db, 'calendarData');
+const memoRef = ref(db, 'memoData');
 
 const DOT_COLORS = [
   {id:'red',    hex:'#e74c3c', label:'赤'},
@@ -220,6 +245,7 @@ const HOLIDAYS = {
 };
 
 let calData = {};
+let memoData = {};
 let cur = new Date();
 let editKey = null;
 let tmpDots = [], tmpHl = null, tmpEvents = [];
@@ -264,8 +290,9 @@ function showToast(msg) {
 async function loadData() {
   setStatus('syncing', '読み込み中...');
   try {
-    const snap = await get(dataRef);
-    calData = snap.exists() ? snap.val() : {};
+    const [snapCal, snapMemo] = await Promise.all([get(dataRef), get(memoRef)]);
+    calData = snapCal.exists() ? snapCal.val() : {};
+    memoData = snapMemo.exists() ? snapMemo.val() : {};
     setStatus('synced', '同期済み — ' + new Date().toLocaleTimeString('ja-JP'));
     renderAll();
   } catch (e) {
@@ -276,7 +303,7 @@ async function loadData() {
 async function saveData() {
   setStatus('syncing', '保存中...');
   try {
-    await set(dataRef, calData);
+    await Promise.all([set(dataRef, calData), set(memoRef, memoData)]);
     setStatus('synced', '保存しました — ' + new Date().toLocaleTimeString('ja-JP'));
     showToast('✓ 保存しました');
   } catch (e) {
@@ -285,9 +312,10 @@ async function saveData() {
 }
 
 // ── 描画 ──
+function mk() { return `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}` }
 function dk(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}` }
 function getDay(k) { return calData[k] || {dots:[], hl:null, events:[]} }
-function renderAll() { renderCalendar(); renderSummary(); }
+function renderAll() { renderCalendar(); renderSummary(); renderMemo(); }
 
 function renderCalendar() {
   const y = cur.getFullYear(), m = cur.getMonth();
@@ -362,6 +390,41 @@ function renderSummary() {
   });
   if (!any) sg.innerHTML = '<div class="summary-empty">蛍光マークをつけた日が集計されます</div>';
 }
+
+function renderMemo() {
+  const key = mk();
+  const items = (memoData[key] || []);
+  const ul = document.getElementById('memo-list');
+  ul.innerHTML = '';
+  if (items.length === 0) {
+    ul.innerHTML = '<li class="memo-empty">備考はまだありません</li>';
+    return;
+  }
+  items.forEach((text, i) => {
+    const li = document.createElement('li'); li.className = 'memo-item';
+    li.innerHTML = `<span class="memo-bullet">・</span><span class="memo-text">${text}</span><button class="memo-del" data-i="${i}">×</button>`;
+    ul.appendChild(li);
+  });
+  ul.querySelectorAll('.memo-del').forEach(btn => btn.addEventListener('click', async () => {
+    const key = mk();
+    memoData[key] = (memoData[key] || []).filter((_, j) => j !== +btn.dataset.i);
+    if (memoData[key].length === 0) delete memoData[key];
+    renderMemo();
+    await saveData();
+  }));
+}
+
+document.getElementById('memo-add-btn').onclick = async () => {
+  const inp = document.getElementById('memo-input'); const v = inp.value.trim();
+  if (!v) return;
+  const key = mk();
+  if (!memoData[key]) memoData[key] = [];
+  memoData[key].push(v);
+  inp.value = '';
+  renderMemo();
+  await saveData();
+};
+document.getElementById('memo-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('memo-add-btn').click(); });
 
 // ── モーダル ──
 function openModal(key) {
