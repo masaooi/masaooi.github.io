@@ -368,23 +368,17 @@ function renderCalendar() {
 function renderSummary() {
   const sg = document.getElementById('summary-grid'); sg.innerHTML = '';
   const y = cur.getFullYear(), m = cur.getMonth();
-  const thisYear = new Date().getFullYear();
-  let any = false;
-  HL_COLORS.forEach(col => {
-    let mc = 0, yc = 0;
-    Object.entries(calData).forEach(([k, v]) => {
-      if (!v.hl || v.hl !== col.id) return;
-      const [ky, km] = k.split('-').map(Number);
-      if (ky === thisYear) yc++;
-      if (ky === y && km-1 === m) mc++;
-    });
-    if (mc === 0 && yc === 0) return;
-    any = true;
-    const card = document.createElement('div'); card.className = 'summary-card';
-    card.innerHTML = `<div class="summary-label"><span class="swatch" style="background:${col.hex}"></span>${col.label}</div><div class="summary-nums">今月 ${mc}日　今年 ${yc}日</div>`;
-    sg.appendChild(card);
+  const skyCol = HL_COLORS.find(c => c.id === 'sky');
+  let mc = 0, yc = 0;
+  Object.entries(calData).forEach(([k, v]) => {
+    if (!v.hl || v.hl !== 'sky') return;
+    const [ky, km] = k.split('-').map(Number);
+    if (ky === y) yc++;
+    if (ky === y && km-1 === m) mc++;
   });
-  if (!any) sg.innerHTML = '<div class="summary-empty">蛍光マークをつけた日が集計されます</div>';
+  const card = document.createElement('div'); card.className = 'summary-card';
+  card.innerHTML = `<div class="summary-label"><span class="swatch" style="background:${skyCol.hex}"></span>${skyCol.label}</div><div class="summary-nums">今月 ${mc}日　${y}年 ${yc}日</div>`;
+  sg.appendChild(card);
 }
 
 function renderMemo() {
