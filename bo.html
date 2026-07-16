@@ -16,15 +16,25 @@
       --shadow: 0 14px 35px rgba(65, 48, 31, .08);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(123, 78, 45, .10), transparent 30rem),
+        radial-gradient(
+          circle at top left,
+          rgba(123, 78, 45, .10),
+          transparent 30rem
+        ),
         var(--bg);
-      font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+      font-family:
+        "Yu Mincho",
+        "Hiragino Mincho ProN",
+        "Noto Serif JP",
+        serif;
       line-height: 1.75;
     }
 
@@ -103,19 +113,69 @@
 
     .session-list {
       display: grid;
-      gap: 2px;
+      gap: 6px;
     }
 
+    /*
+     * 各セミナー記録の開閉部分
+     */
     .session {
-      display: grid;
-      grid-template-columns: 7.5rem 5.5rem 1fr;
-      gap: 14px;
-      padding: 10px 12px;
       border-radius: 12px;
+      overflow: hidden;
     }
 
     .session:nth-child(odd) {
       background: rgba(239, 228, 215, .38);
+    }
+
+    .session summary {
+      display: grid;
+      grid-template-columns: 1.5rem 7.5rem 5.5rem 1fr;
+      gap: 14px;
+      align-items: baseline;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      list-style: none;
+      transition:
+        background-color .2s ease,
+        color .2s ease;
+    }
+
+    /*
+     * ブラウザ標準の三角形を非表示にする
+     */
+    .session summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .session summary:hover {
+      background: var(--accent-soft);
+    }
+
+    .session summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    /*
+     * 独自の開閉アイコン
+     */
+    .session summary::before {
+      content: "＋";
+      color: var(--accent);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .session[open] summary::before {
+      content: "−";
+    }
+
+    .session[open] summary {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      background: var(--accent-soft);
     }
 
     .session time {
@@ -134,19 +194,71 @@
       overflow-wrap: anywhere;
     }
 
+    /*
+     * 展開される要約
+     */
+    .session-summary {
+      margin: 0;
+      padding: 18px 22px 20px 42px;
+      border-top: 1px solid var(--line);
+      background: rgba(255, 253, 248, .75);
+    }
+
+    .session-summary h3 {
+      margin: 0 0 8px;
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .session-summary p {
+      margin: 0;
+    }
+
+    .session-summary p + p {
+      margin-top: 10px;
+    }
+
+    .session-summary ul {
+      margin: 8px 0 0;
+      padding-left: 1.5em;
+    }
 
     @media (max-width: 700px) {
-      .page { margin-top: 32px; }
-      .year-block { padding: 18px; border-radius: 18px; }
-      .session {
-        grid-template-columns: 1fr;
-        gap: 0;
+      .page {
+        margin-top: 32px;
+      }
+
+      .year-block {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      .session summary {
+        grid-template-columns: 1.5rem 1fr;
+        gap: 2px 8px;
         padding: 12px;
       }
-      .session-time { margin-bottom: 4px; }
+
+      .session summary::before {
+        grid-row: 1 / 4;
+      }
+
+      .session-time {
+        margin-bottom: 4px;
+      }
+
+      .session-topic {
+        grid-column: 2;
+      }
+
+      .session-summary {
+        padding: 16px 18px 18px 36px;
+      }
     }
   </style>
 </head>
+
 <body>
   <main class="page">
     <header>
@@ -158,27 +270,74 @@
       <a href="#y2026">2026</a>
     </nav>
 
+    <section class="year-block" aria-labelledby="y2026">
+      <h2 id="y2026">2026</h2>
 
-      <section class="year-block" aria-labelledby="y2026">
-        <h2 id="y2026">2026</h2>
-        <div class="session-list">
+      <div class="session-list">
 
-          <article class="session">
-            <time datetime="2026-07-06">2026-07-06
-            </time>
-            <span class="session-time"> 14:00-</span>
-            <span class="session-topic">Kedlaya_Notes on condensed mathematics, Section 1.1-1.3</span>
-          </article>
+        <details class="session">
+          <summary>
+            <time datetime="2026-07-06">2026-07-06</time>
+            <span class="session-time">14:00–</span>
+            <span class="session-topic">
+              Kedlaya, Notes on condensed mathematics,
+              Sections 1.1–1.3
+            </span>
+          </summary>
 
-          <article class="session">
-            <time datetime="2026-07-06">2026-07-13</time>
-            <span class="session-time"> 14:00-</span>
-            <span class="session-topic">Kedlaya_Notes on condensed mathematics, Section 1.3-1.4</span>
-          </article>
+          <div class="session-summary">
+            <p>
+              Kedlaya notesのSection 1.1から1.3まで読んだが、圏論の基礎知識がないので、それを議論しながら進めた。
+            </p>
 
-        </div>
-      </section>
+            <ul>
+              <li>small setとは、固定されたuniverseに属するsetのこと。</li>
+              <li>small categoryとは、対象と射の集合がそれぞれsmallなこと。</li>
+              <li>圏Cにおけるdiagram Dについてのlimitとは、D上のconeの圏のterminal objectのこと。</li>
+              <li>圏Cにおけるdiagram Dについてのcolimitとは、D上のcoconeの圏のinitial objectのこと。</li>
+              <li>limitやcolimitがsmall/filteredとは、Dがsmall/filteredなこと。</li>
+              <li>圏がsmall completeなどと言うと、任意のsmall limitが存在することを指す。</li>
+              <li>filtered categoryとは、任意の二つのobjectや二つの射について、十分先まで行けば同じにできるようなやつ。（例えばterminal objectがあればfilteredだが、これはかなり強い？）</li>
+              <li>productはdiscrete diagramのlimit。coproductはcolimit。</li>>
+              <li>群がgroupoidと思えるように、環はpreadditive categoryと思える。このことから、preadditive categoryはringoidとも呼ぶ。</li>
+              <li>additive categoryではfinite productとfinite coproductが一致する。これを(finite) direct sumと呼ぶ。（一般のdirect sumは多分coproductのこと）</li>
+              <li>additive categoryとは、任意のfinite product/coproductを持つpreadditive categoryのこと。</li>
+              <li>abelian categoryとは、任意のkernelとcokernelが存在するadditive categoryのこと。</li>
+              <li>環A上の加群圏Mod_Aを一般化するものとして、preadditive category A上の加群圏Mod_Aを、Fun^+(A,Ab)と定義する。</li>
+              <li>基本的にこのような関手圏は、関手の値域圏の性質をそのまま継承するので、例えばこの場合にはMod_Aがabelian categoryであることが分かる。また、limitやcolimitも、値域におけるpointwiseなlimitやcolimitとして構成することができる。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="session">
+          <summary>
+            <time datetime="2026-07-13">2026-07-13</time>
+            <span class="session-time">14:00–</span>
+            <span class="session-topic">
+              Kedlaya, Notes on condensed mathematics,
+              Sections 1.3
+            </span>
+          </summary>
+
+          <div class="session-summary">
+            <p>
+              前回の内容を踏まえつつ、Section 1.3を議論した。
+            </p>
+
+            <ul>
+              <li>cocomplete preadditive category Aのobject Xがcompactであるとは、Hom_A(X,-)が任意のfiltered colimitを保つこと。</li>
+              <li>この条件から、「任意のinfinite coproductを保つ」ことも出せる。（infinite coproductは、finite coproductのfiltered colimitと思える。従って、finite coproductを保つことを見れば良いが、finite coproductはfinite productと同じである。Hom_A(X,-)が任意のproductを保つ、ということはproductの普遍性に他ならない。）</li>
+              <li>direct sumを持つabelian category Aのfull subcategory A'がAをgenerateするとは、Aの任意のobjectが、A'のobjectのdirect sumからのepiとして表せること。</li>
+              <li>Aをsmall additive categoryとして、それをMod_Aに米田で埋め込むと、それはMod_Aをgenerateするcompact objectたちになる。</li>
+              <li>この証明では、「Mod_Aの任意のobjectは表現可能関手（Aのobject）のcolimitで書ける」というco米田が重要となる。</li>
+              <li>Mod_Aの任意のobjectがcompact objectたちのcolimitで書けることから、Mod_Aはcompactly generatedである。</li>
+              <li>co米田の正確な主張と、それが米田のどう「co」なのか、またKan extensionとの関係はどうなっているのか、あたりはよく理解できていないので、また次回。</li>
+            </ul>
+          </div>
+        </details>
+
+      </div>
+    </section>
   </main>
-
 </body>
 </html>
