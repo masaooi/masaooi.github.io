@@ -48,6 +48,7 @@
     }
     .tabs {
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: 1rem;
     }
@@ -83,6 +84,7 @@ E-mail: masaooi at ntu.edu.tw<br>
     <button class="tab-button active" data-tab="papers">Papers/Preprints</button>
     <button class="tab-button" data-tab="talks">Talks</button>
     <button class="tab-button" data-tab="lectures">Lectures</button>
+    <button class="tab-button" data-tab="events">Events</button>
 </div>
   
 <div id="papers" class="tab-content active">
@@ -351,7 +353,7 @@ E-mail: masaooi at ntu.edu.tw<br>
         <li><div><b>On the endoscopic lifting of simple supercuspidal representations</b>, Number theory seminar, the University of Tokyo, April 27, 2016.</div></li>
         <li><div><b>On the endoscopic lifting of simple supercuspidal representations</b>, Algebra seminar, Tohoku University, April 21, 2016.</div></li>
         <li><div><b>On the lifting of simple supercuspidal representations</b>, Langlands and Harmonic Analysis, Kyushu University, March 7, 2016.</div></li>
-        </ul>
+        </ol>
         
 </div>
   
@@ -359,16 +361,25 @@ E-mail: masaooi at ntu.edu.tw<br>
     <h3>Lectures</h3>
     <ol reversed>
     
-    <li><div>2027 Spring: Introduction to theory of automorphic representations    
-    <li><div>2026 Fall: Modern Algebra (Introduction to representation theory)    
-    <li><div>2026 Spring: <a href="https://masaooi.github.io/2026Spring.html">Structure theory of p-adic reductive groups</a>
-    <li><div>2025 Fall: <a href="https://masaooi.github.io/2025Fall.html">Theory of algebraic groups</a>
-    <li><div>2025 Spring: <a href="https://masaooi.github.io/2025Spring.html">Introduction to the local Langlands correspondence</a>
-    <li><div>2024 Fall: <a href="https://masaooi.github.io/2024Fall.html">Representation theory of finite groups of Lie type</a>
+    <li><div>2027 Spring: Introduction to theory of automorphic representations</div></li>
+    <li><div>2026 Fall: Modern Algebra (Introduction to representation theory)</div></li>
+    <li><div>2026 Spring: <a href="https://masaooi.github.io/2026Spring.html">Structure theory of p-adic reductive groups</a></div></li>
+    <li><div>2025 Fall: <a href="https://masaooi.github.io/2025Fall.html">Theory of algebraic groups</a></div></li>
+    <li><div>2025 Spring: <a href="https://masaooi.github.io/2025Spring.html">Introduction to the local Langlands correspondence</a></div></li>
+    <li><div>2024 Fall: <a href="https://masaooi.github.io/2024Fall.html">Representation theory of finite groups of Lie type</a></div></li>
     
     </ol>    
 </div>
     
+<div id="events" class="tab-content">
+    <h3>Events</h3>
+    <ol>
+        <li><div><b><a href="">One-day workshop on representation theory of p-adic groups and related topics</a></b><br>
+            October 20, 2026, Academia Sinica.
+        </div></li>
+    </ol>
+</div>
+
 <hr>
 
 <footer>
@@ -381,6 +392,11 @@ E-mail: masaooi at ntu.edu.tw<br>
     document.getElementById("last-updated").textContent = "Last Updated: " + isoDate;
     const buttons = document.querySelectorAll(".tab-button");const contents = document.querySelectorAll(".tab-content");
     
+      if (window.location.hash === "#events") {
+        buttons.forEach(button => button.classList.toggle("active", button.dataset.tab === "events"));
+        contents.forEach(content => content.classList.toggle("active", content.id === "events"));
+      }
+
       buttons.forEach(button => {
         button.addEventListener("click", () => {
           // タブ切り替え
